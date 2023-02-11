@@ -5,6 +5,9 @@ const { token } = require("./config.json");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
+const setupVar = process.env.SETUP_VAR || "default_value";
+console.log(setupVar);
+
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs
