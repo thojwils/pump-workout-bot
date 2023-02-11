@@ -9,11 +9,10 @@
   "dependencies": {
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
-    "mongodb": "^5.0.1",
-    "node.js": "^0.0.1-security"
+    "mongodb": "^5.0.1"
   },
   "engines": {
-    "node": "14.x"
+    "node": "18.x"
   },
   "author": "TJ Wilson",
   "license": "MIT"
