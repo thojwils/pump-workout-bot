@@ -27,7 +27,7 @@ module.exports = {
           const db = mongoClient.db(dbName);
           const collection = db.collection("workoutData");
           // insert date
-          date = new Date();
+          date = new Date().toLocaleString();
           return collection.insertOne({
             date: date,
             username: username,

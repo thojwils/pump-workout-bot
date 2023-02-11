@@ -1,39 +1,78 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { Client, GatewayIntentBits } = require("discord.js");
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const { Client, GatewayIntentBits, MessageEmbed } = require("discord.js");
 const MongoClient = require("mongodb").MongoClient;
-// const { Chart } = require("chart.js");
-// const Canvas = require("canvas");
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const url =
   "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
 const dbName = "workouts";
+const collectionName = "workoutData";
+const channelName = "🏋🏽-health-fitness";
 
-const fetchWorkoutDataForUser = async (username) => {
+client.on("ready", async () => {
+  console.log(`Logged in as ${client.user.tag}`);
+
+  // Schedule a job to run at the end of each day to fetch the workout data and send a message to the channel
+  scheduleJob("0 0 0 * * *", async () => {
+    const date = new Date();
+    const workoutData = await fetchWorkoutDataForDay(date);
+
+    if (workoutData.length > 0) {
+      const messageEmbed = new MessageEmbed()
+        .setTitle("Workout Log")
+        .setColor("#0099ff")
+        .setDescription(
+          `Here are the users who worked out on ${date.toDateString()}:`
+        );
+
+      workoutData.forEach((workout) => {
+        messageEmbed.addField(
+          workout.username,
+          workout.date.toLocaleTimeString()
+        );
+      });
+
+      const channel = client.channels.cache.find(
+        (channel) => channel.name === channelName
+      );
+      channel.send({ embeds: [messageEmbed] });
+    }
+  });
+});
+
+const fetchWorkoutDataForDay = async (date) => {
   let mongoClient;
-  const workouts = [];
-  try {
-    mongoClient = await MongoClient.connect(url, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    const db = mongoClient.db(dbName);
-    const collection = db.collection("workoutData");
+  const workoutData = [];
 
-    // retrieve list of workouts for the given user in the current month
-    const currentMonth = new Date().getMonth();
+  try {
+    mongoClient = await MongoClient.connect(url, { useUnifiedTopology: true });
+    const db = mongoClient.db(dbName);
+    const collection = db.collection(collectionName);
+
     const res = await collection
       .find({
-        username: username,
         date: {
-          $gte: new Date(new Date().setMonth(currentMonth, 1)),
-          $lt: new Date(new Date().setMonth(currentMonth + 1, 1)),
+          $gte: new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            0,
+            0,
+            0
+          ),
+          $lt: new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate() + 1,
+            0,
+            0,
+            0
+          ),
         },
       })
       .toArray();
 
     res.forEach((workout) => {
-      workouts.push(workout);
+      workoutData.push(workout);
     });
   } catch (error) {
     console.error(error);
@@ -42,51 +81,33 @@ const fetchWorkoutDataForUser = async (username) => {
       await mongoClient.close();
     }
   }
-  return workouts;
+
+  return workoutData;
 };
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("show-workouts")
-    .setDescription("Shows user's workout data"),
-  async execute(interaction) {
-    const username = interaction.user.username;
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isCommand()) return;
 
-    // Fetch user's workout data from database
-    const workoutData = await fetchWorkoutDataForUser(username);
+  if (interaction.commandName === "workedOut") {
+    const workoutData = await fetchWorkoutDataForDay(new Date());
+    if (workoutData.length > 0) {
+      const messageEmbed = new MessageEmbed()
+        .setTitle("Workout Log")
+        .setColor("#0099ff")
+        .setDescription(
+          `Here are the users who worked out on ${new Date().toDateString()}:`
+        );
 
-    // Create the chart using Chart.js
-    // const canvas = Canvas.createCanvas(700, 500);
-    // const ctx = canvas.getContext("2d");
-    // const chart = new Chart(ctx, {
-    //   type: "bar",
-    //   data: {
-    //     labels: workoutData.map((entry) => entry.date),
-    //     datasets: [
-    //       {
-    //         label: "Workouts",
-    //         data: workoutData.map((entry) => entry.value),
-    //         backgroundColor: "rgba(54, 162, 235, 0.2)",
-    //         borderColor: "rgba(54, 162, 235, 1)",
-    //         borderWidth: 1,
-    //       },
-    //     ],
-    //   },
-    //   options: {
-    //     scales: {
-    //       yAxes: [
-    //         {
-    //           ticks: {
-    //             beginAtZero: true,
-    //           },
-    //         },
-    //       ],
-    //     },
-    //   },
-    // });
+      workoutData.forEach((workout) => {
+        messageEmbed.addField(
+          workout.username,
+          workout.date.toLocaleTimeString()
+        );
+      });
 
-    // Send the chart as a message
-    interaction.respond(`Here's your workout data for the current month:`);
-    // interaction.respond({ files: [chart.toBase64Image()] });
-  },
-};
+      await interaction.reply({ embeds: [messageEmbed] });
+    } else {
+      await interaction.reply("No one worked out today!");
+    }
+  }
+});
