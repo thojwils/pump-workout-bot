@@ -1,12 +1,18 @@
-const fs = require("node:fs");
-const path = require("node:path");
+const fs = require("fs");
+const path = require("path");
 const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
-const { token } = require("./config.json");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-const setupVar = process.env.SETUP_VAR || "default_value";
-console.log(setupVar);
+const token =
+  process.env.DISCORD_BOT_TOKEN ||
+  (() => {
+    try {
+      return JSON.parse(fs.readFileSync("./config.json", "utf-8")).token;
+    } catch (error) {
+      return undefined;
+    }
+  })();
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
