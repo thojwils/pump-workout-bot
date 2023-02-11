@@ -2,8 +2,8 @@ const { SlashCommandBuilder } = require("discord.js");
 const { Client, GatewayIntentBits } = require("discord.js");
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const MongoClient = require("mongodb").MongoClient;
-const { Chart } = require("chart.js");
-const Canvas = require("canvas");
+// const { Chart } = require("chart.js");
+// const Canvas = require("canvas");
 
 const url =
   "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
@@ -56,37 +56,37 @@ module.exports = {
     const workoutData = await fetchWorkoutDataForUser(username);
 
     // Create the chart using Chart.js
-    const canvas = Canvas.createCanvas(700, 500);
-    const ctx = canvas.getContext("2d");
-    const chart = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: workoutData.map((entry) => entry.date),
-        datasets: [
-          {
-            label: "Workouts",
-            data: workoutData.map((entry) => entry.value),
-            backgroundColor: "rgba(54, 162, 235, 0.2)",
-            borderColor: "rgba(54, 162, 235, 1)",
-            borderWidth: 1,
-          },
-        ],
-      },
-      options: {
-        scales: {
-          yAxes: [
-            {
-              ticks: {
-                beginAtZero: true,
-              },
-            },
-          ],
-        },
-      },
-    });
+    // const canvas = Canvas.createCanvas(700, 500);
+    // const ctx = canvas.getContext("2d");
+    // const chart = new Chart(ctx, {
+    //   type: "bar",
+    //   data: {
+    //     labels: workoutData.map((entry) => entry.date),
+    //     datasets: [
+    //       {
+    //         label: "Workouts",
+    //         data: workoutData.map((entry) => entry.value),
+    //         backgroundColor: "rgba(54, 162, 235, 0.2)",
+    //         borderColor: "rgba(54, 162, 235, 1)",
+    //         borderWidth: 1,
+    //       },
+    //     ],
+    //   },
+    //   options: {
+    //     scales: {
+    //       yAxes: [
+    //         {
+    //           ticks: {
+    //             beginAtZero: true,
+    //           },
+    //         },
+    //       ],
+    //     },
+    //   },
+    // });
 
     // Send the chart as a message
     interaction.respond(`Here's your workout data for the current month:`);
-    interaction.respond({ files: [chart.toBase64Image()] });
+    // interaction.respond({ files: [chart.toBase64Image()] });
   },
 };
