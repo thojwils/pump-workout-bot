@@ -1,11 +1,15 @@
 const fs = require("fs");
 const path = require("path");
+const express = require("express");
+const app = express();
+
 const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-
 const port = process.env.PORT || 3000;
-
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
 const token =
   process.env.DISCORD_BOT_TOKEN ||
   (() => {
