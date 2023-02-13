@@ -1,9 +1,33 @@
 const { REST, Routes } = require("discord.js");
 const fs = require("node:fs");
 
-const token = process.env.DISCORD_APP_TOKEN;
-const clientId = process.env.DISCORD_APP_CLIENT_ID;
-const guildId = process.env.DISCORD_APP_GUILD_ID;
+const token =
+  process.env.DISCORD_BOT_TOKEN ||
+  (() => {
+    try {
+      return JSON.parse(fs.readFileSync("./config.json", "utf-8")).token;
+    } catch (error) {
+      return undefined;
+    }
+  })();
+const clientId =
+  process.env.DISCORD_APP_CLIENT_ID ||
+  (() => {
+    try {
+      return JSON.parse(fs.readFileSync("./config.json", "utf-8")).clientId;
+    } catch (error) {
+      return undefined;
+    }
+  })();
+const guildId =
+  process.env.DISCORD_APP_GUILD_ID ||
+  (() => {
+    try {
+      return JSON.parse(fs.readFileSync("./config.json", "utf-8")).guildId;
+    } catch (error) {
+      return undefined;
+    }
+  })();
 
 const commands = [];
 // Grab all the command files from the commands directory you created earlier

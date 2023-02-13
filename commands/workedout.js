@@ -1,113 +1,77 @@
-const { Client, GatewayIntentBits, MessageEmbed } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
+const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const MongoClient = require("mongodb").MongoClient;
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-const url =
-  "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
-const dbName = "workouts";
-const collectionName = "workoutData";
-const channelName = "🏋🏽-health-fitness";
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName("streak")
+    .setDescription("Counts how many consecutive days you have worked out"),
+  async execute(interaction) {
+    console.log("Execute command begin");
+    const username = interaction.user.username;
+    const url =
+      "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
+    const dbName = "workouts";
+    let streak = 0;
+    let mongoClient;
 
-client.on("ready", async () => {
-  console.log(`Logged in as ${client.user.tag}`);
-
-  // Schedule a job to run at the end of each day to fetch the workout data and send a message to the channel
-  scheduleJob("0 0 0 * * *", async () => {
-    const date = new Date();
-    const workoutData = await fetchWorkoutDataForDay(date);
-
-    if (workoutData.length > 0) {
-      const messageEmbed = new MessageEmbed()
-        .setTitle("Workout Log")
-        .setColor("#0099ff")
-        .setDescription(
-          `Here are the users who worked out on ${date.toDateString()}:`
-        );
-
-      workoutData.forEach((workout) => {
-        messageEmbed.addField(
-          workout.username,
-          workout.date.toLocaleTimeString()
-        );
+    try {
+      mongoClient = await MongoClient.connect(url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
       });
+      const db = mongoClient.db(dbName);
+      const collection = db.collection("workoutData");
 
-      const channel = client.channels.cache.find(
-        (channel) => channel.name === channelName
+      const latestWorkout = await collection.findOne(
+        { username },
+        { sort: { date: -1 } }
       );
-      channel.send({ embeds: [messageEmbed] });
-    }
-  });
-});
 
-const fetchWorkoutDataForDay = async (date) => {
-  let mongoClient;
-  const workoutData = [];
+      if (latestWorkout) {
+        const today = new Date();
+        const lastWorkoutDate = new Date(latestWorkout.date);
+        const diffTime = Math.abs(today - lastWorkoutDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  try {
-    mongoClient = await MongoClient.connect(url, { useUnifiedTopology: true });
-    const db = mongoClient.db(dbName);
-    const collection = db.collection(collectionName);
+        if (diffDays === 1) {
+          const previousWorkout = await collection.findOne(
+            { username, date: { $lt: latestWorkout.date } },
+            { sort: { date: -1 } }
+          );
 
-    const res = await collection
-      .find({
-        date: {
-          $gte: new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            0,
-            0,
-            0
-          ),
-          $lt: new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate() + 1,
-            0,
-            0,
-            0
-          ),
-        },
-      })
-      .toArray();
+          if (previousWorkout) {
+            const previousWorkoutDate = new Date(previousWorkout.date);
+            const diffTime2 = Math.abs(lastWorkoutDate - previousWorkoutDate);
+            const diffDays2 = Math.ceil(diffTime2 / (1000 * 60 * 60 * 24));
 
-    res.forEach((workout) => {
-      workoutData.push(workout);
-    });
-  } catch (error) {
-    console.error(error);
-  } finally {
-    if (mongoClient) {
-      await mongoClient.close();
-    }
-  }
+            if (diffDays2 === 1) {
+              streak = previousWorkout.streak + 1;
+            } else {
+              streak = 1;
+            }
+          } else {
+            streak = 1;
+          }
+        }
+      }
 
-  return workoutData;
-};
-
-client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
-
-  if (interaction.commandName === "workedOut") {
-    const workoutData = await fetchWorkoutDataForDay(new Date());
-    if (workoutData.length > 0) {
-      const messageEmbed = new MessageEmbed()
-        .setTitle("Workout Log")
+      const embedBuilder = new EmbedBuilder()
+        .setTitle("Workout Streak")
         .setColor("#0099ff")
         .setDescription(
-          `Here are the users who worked out on ${new Date().toDateString()}:`
+          `Your current workout streak is ${streak} day${
+            streak === 1 ? "" : "s"
+          }.`
         );
-
-      workoutData.forEach((workout) => {
-        messageEmbed.addField(
-          workout.username,
-          workout.date.toLocaleTimeString()
-        );
-      });
-
-      await interaction.reply({ embeds: [messageEmbed] });
-    } else {
-      await interaction.reply("No one worked out today!");
+      await interaction.reply({ embeds: [embedBuilder] });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (mongoClient) {
+        await mongoClient.close();
+      }
     }
-  }
-});
+  },
+};
