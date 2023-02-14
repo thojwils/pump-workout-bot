@@ -22,7 +22,7 @@ const pumpData = new SlashCommandBuilder()
         { name: "Lower body", value: "lower_body" },
         { name: "Cardio", value: "cardio" },
         { name: "Yoga", value: "yoga" },
-        { name: "Stretch", value: "stretch" },
+        { name: "Strech", value: "strech" },
         { name: "Rest", value: "rest" }
       )
   );
@@ -31,8 +31,6 @@ const saveWorkoutData = async (username, date, type) => {
   try {
     const client = await MongoClient.connect(url, {
       useUnifiedTopology: true,
-      connectTimeoutMS: 3000,
-      socketTimeoutMS: 3000,
     });
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
@@ -42,9 +40,6 @@ const saveWorkoutData = async (username, date, type) => {
     console.log(`Data added: ${JSON.stringify(workoutData)}`);
   } catch (error) {
     console.error(error);
-    if (error.name === "MongoTimeoutError") {
-      console.error("MongoDB connection timed out");
-    }
   } finally {
     if (client) {
       client.close();
@@ -70,37 +65,9 @@ module.exports = {
     });
     const type = interaction.options.getString("type");
 
-    // Bot response message cases
-    let replyMessage;
-    switch (type) {
-      case "full_body":
-        replyMessage = `@${username} did a full body workout! 🏋️`;
-        break;
-      case "upper_body":
-        replyMessage = `@${username} did an upper body workout! 💪`;
-        break;
-      case "lower_body":
-        replyMessage = `@${username} did a lower body workout! 🍗`;
-        break;
-      case "cardio":
-        replyMessage = `@${username} did some cardio! 🏃‍♀️`;
-        break;
-      case "yoga":
-        replyMessage = `@${username} did some yoga! 🧘‍♀️`;
-        break;
-      case "stretch":
-        replyMessage = `@${username} stretched! 🦒`;
-        break;
-      case "rest":
-        replyMessage = `@${username} took a rest day! 💤`;
-        break;
-      default:
-        replyMessage = `@${username} did something...`;
-        break;
-    }
     // Perform the discord API call and MongoDB insert asynchronously
     await Promise.all([
-      interaction.reply(replyMessage),
+      interaction.reply(`@${username} pumped ${type}! ✅`),
       saveWorkoutData(username, date, type),
     ]);
   },
