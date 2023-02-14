@@ -1,14 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const MongoClient = require("mongodb").MongoClient;
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("streak")
     .setDescription("Counts how many consecutive days you have worked out"),
   async execute(interaction) {
-    console.log("Execute command begin");
     const username = interaction.user.username;
     const url =
       "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
