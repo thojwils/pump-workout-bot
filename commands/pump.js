@@ -67,7 +67,7 @@ module.exports = {
 
     // Perform the discord API call and MongoDB insert asynchronously
     await Promise.all([
-      interaction.reply(`Good Pump <@${username}>! ✅`),
+      interaction.reply(`Good Pump @${username}! ✅`),
       saveWorkoutData(username, date, type),
     ]);
   },
