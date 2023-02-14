@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { Client, GatewayIntentBits } = require("discord.js");
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const MongoClient = require("mongodb").MongoClient;
 
 const url =
@@ -29,12 +29,12 @@ const pumpData = new SlashCommandBuilder()
 
 const saveWorkoutData = async (username, date, type) => {
   try {
-    const client = await MongoClient.connect(url, {
+    const Client = await MongoClient.connect(url, {
       useUnifiedTopology: true,
       connectTimeoutMS: 3000,
       socketTimeoutMS: 3000,
     });
-    const db = client.db(dbName);
+    const db = mongoClient.db(dbName);
     const collection = db.collection(collectionName);
 
     const workoutData = { date, username, type };
@@ -46,8 +46,8 @@ const saveWorkoutData = async (username, date, type) => {
       console.error("MongoDB connection timed out");
     }
   } finally {
-    if (client) {
-      client.close();
+    if (Client) {
+      Client.close();
     }
   }
 };
