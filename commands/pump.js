@@ -65,9 +65,37 @@ module.exports = {
     });
     const type = interaction.options.getString("type");
 
+    // Bot response message cases
+    let replyMessage;
+    switch (type) {
+      case "full_body":
+        replyMessage = `@${username} did a full body workout! 🏋️`;
+        break;
+      case "upper_body":
+        replyMessage = `@${username} did an upper body workout! 💪`;
+        break;
+      case "lower_body":
+        replyMessage = `@${username} did a lower body workout! 🍗`;
+        break;
+      case "cardio":
+        replyMessage = `@${username} did some cardio! 🏃‍♀️`;
+        break;
+      case "yoga":
+        replyMessage = `@${username} did some yoga! 🧘‍♀️`;
+        break;
+      case "stretch":
+        replyMessage = `@${username} stretched! 🦒`;
+        break;
+      case "rest":
+        replyMessage = `@${username} took a rest day! 💤`;
+        break;
+      default:
+        replyMessage = `@${username} did something...`;
+        break;
+    }
     // Perform the discord API call and MongoDB insert asynchronously
     await Promise.all([
-      interaction.reply(`Good Pump @${username}! ✅`),
+      interaction.reply(replyMessage),
       saveWorkoutData(username, date, type),
     ]);
   },
