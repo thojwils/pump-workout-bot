@@ -22,7 +22,7 @@ const pumpData = new SlashCommandBuilder()
         { name: "Lower body", value: "lower_body" },
         { name: "Cardio", value: "cardio" },
         { name: "Yoga", value: "yoga" },
-        { name: "Strech", value: "strech" },
+        { name: "Stretch", value: "stretch" },
         { name: "Rest", value: "rest" }
       )
   );
@@ -31,6 +31,8 @@ const saveWorkoutData = async (username, date, type) => {
   try {
     const client = await MongoClient.connect(url, {
       useUnifiedTopology: true,
+      connectTimeoutMS: 3000,
+      socketTimeoutMS: 3000,
     });
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
@@ -40,6 +42,9 @@ const saveWorkoutData = async (username, date, type) => {
     console.log(`Data added: ${JSON.stringify(workoutData)}`);
   } catch (error) {
     console.error(error);
+    if (error.name === "MongoTimeoutError") {
+      console.error("MongoDB connection timed out");
+    }
   } finally {
     if (client) {
       client.close();
