@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { Client, GatewayIntentBits } = require("discord.js");
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-const MongoClient = require("mongodb").MongoClient;
 
 const url =
   "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
@@ -29,11 +28,25 @@ const pumpData = new SlashCommandBuilder()
 
 const saveWorkoutData = async (username, date, type) => {
   try {
+    const MongoClient = require("mongodb").MongoClient;
     const client = await MongoClient.connect(url, {
       useUnifiedTopology: true,
     });
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
+
+    // Check if the interaction already exists
+    const existingInteraction = await collection.findOne({
+      username,
+      date,
+      type,
+    });
+    if (existingInteraction) {
+      console.log(
+        `Interaction already exists: ${JSON.stringify(existingInteraction)}`
+      );
+      return;
+    }
 
     const workoutData = { date, username, type };
     await collection.insertOne(workoutData);
