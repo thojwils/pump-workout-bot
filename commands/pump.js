@@ -35,6 +35,19 @@ const saveWorkoutData = async (username, date, type) => {
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
 
+    // Check if the interaction already exists
+    const existingInteraction = await collection.findOne({
+      username,
+      date,
+      type,
+    });
+    if (existingInteraction) {
+      console.log(
+        `Interaction already exists: ${JSON.stringify(existingInteraction)}`
+      );
+      return;
+    }
+
     const workoutData = { date, username, type };
     await collection.insertOne(workoutData);
     console.log(`Data added: ${JSON.stringify(workoutData)}`);
