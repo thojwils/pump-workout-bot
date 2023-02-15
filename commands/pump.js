@@ -35,22 +35,26 @@ const saveWorkoutData = async (username, date, type) => {
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
 
-    // Check if the interaction already exists
-    const existingInteraction = await collection.findOne({
-      username,
-      date,
-      type,
-    });
-    if (existingInteraction) {
-      console.log(
-        `Interaction already exists: ${JSON.stringify(existingInteraction)}`
-      );
-      return;
-    }
+    await collection.createIndex({ username: 1, date: -1 }, { unique: true });
 
     const workoutData = { date, username, type };
-    await collection.insertOne(workoutData);
-    console.log(`Data added: ${JSON.stringify(workoutData)}`);
+    const existingData = await collection.findOne({
+      username: username,
+      date: {
+        $gt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        $lt: new Date(Date.now()),
+      },
+    });
+    if (!existingData) {
+      await collection.insertOne(workoutData);
+      console.log(`Data added: ${JSON.stringify(workoutData)}`);
+    } else {
+      console.log(
+        `Data already exists for this user today: ${JSON.stringify(
+          existingData
+        )}`
+      );
+    }
   } catch (error) {
     console.error(error);
   } finally {
@@ -60,9 +64,23 @@ const saveWorkoutData = async (username, date, type) => {
   }
 };
 
+const processedInteractions = new Set();
+
+const markInteractionAsProcessed = (interaction) => {
+  processedInteractions.add(interaction.id);
+  setTimeout(() => {
+    processedInteractions.delete(interaction.id);
+  }, 1000 * 60 * 60 * 24); // Remove from set after 24 hours
+};
+
 module.exports = {
   data: pumpData,
   async execute(interaction) {
+    // Check if the interaction has already been replied to or deferred
+    if (interaction.replied || processedInteractions.has(interaction.id)) {
+      return;
+    }
+
     // Check that interaction contains a user property
     if (!interaction.user) {
       await interaction.reply(
@@ -79,9 +97,11 @@ module.exports = {
     const type = interaction.options.getString("type");
 
     // Perform the discord API call and MongoDB insert asynchronously
+    await interaction.deferReply();
     await Promise.all([
-      interaction.reply(`Good Pump <@${username}>! ✅`),
+      interaction.editReply(`Good Pump <@${username}>! ✅`),
       saveWorkoutData(username, date, type),
     ]);
+    markInteractionAsProcessed(interaction);
   },
 };
