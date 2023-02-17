@@ -1,5 +1,6 @@
 {
-  "token": "MTA2MDYxNDgyNDYyNDY3Mjc3OA.Gm6ptF.VIu8z3u5kRKU3xExPy_ojr6-3uVlcX4HsKrRDE",
-  "clientId": "1060614824624672778",
-  "guildId": "613846712615829523"
+  "token": "MTA3NTI1NDE5Nzc2MDU3MzQ1MA.GUmnDz.IGOYBXc7BbxUNuKV9ZzMmGgW2ZDk7Khyv_2MkI",
+  "clientId": "1075254197760573450",
+  "guildId": "731254335056642051",
+  "mongodb": "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test"
 }
