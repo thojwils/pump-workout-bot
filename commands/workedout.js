@@ -10,7 +10,7 @@ module.exports = {
     const username = interaction.user.username;
     const url =
       "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
-    const dbName = "workouts_dev";
+    const dbName = "workouts";
     let streak = 0;
 
     try {
