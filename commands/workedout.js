@@ -1,92 +1,84 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { Client, GatewayIntentBits } = require("discord.js");
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-const MongoClient = require("mongodb").MongoClient;
-// const { Chart } = require("chart.js");
-// const Canvas = require("canvas");
-
-const url =
-  "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
-const dbName = "workouts";
-
-const fetchWorkoutDataForUser = async (username) => {
-  let mongoClient;
-  const workouts = [];
-  try {
-    mongoClient = await MongoClient.connect(url, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    const db = mongoClient.db(dbName);
-    const collection = db.collection("workoutData");
-
-    // retrieve list of workouts for the given user in the current month
-    const currentMonth = new Date().getMonth();
-    const res = await collection
-      .find({
-        username: username,
-        date: {
-          $gte: new Date(new Date().setMonth(currentMonth, 1)),
-          $lt: new Date(new Date().setMonth(currentMonth + 1, 1)),
-        },
-      })
-      .toArray();
-
-    res.forEach((workout) => {
-      workouts.push(workout);
-    });
-  } catch (error) {
-    console.error(error);
-  } finally {
-    if (mongoClient) {
-      await mongoClient.close();
-    }
-  }
-  return workouts;
-};
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const moment = require("moment");
+const { MongoClient } = require("mongodb");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("show-workouts")
-    .setDescription("Shows user's workout data"),
+    .setName("streak")
+    .setDescription("Counts how many consecutive days you have worked out"),
   async execute(interaction) {
     const username = interaction.user.username;
+    const url =
+      "mongodb+srv://thojwils:hVH3z4YMTyBldh6t@cluster0.ie3kmmd.mongodb.net/test";
+    const dbName = "workouts_dev";
+    let streak = 0;
 
-    // Fetch user's workout data from database
-    const workoutData = await fetchWorkoutDataForUser(username);
+    try {
+      const client = new MongoClient(url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      await client.connect();
+      const db = client.db(dbName);
+      const collection = db.collection("workoutData");
 
-    // Create the chart using Chart.js
-    // const canvas = Canvas.createCanvas(700, 500);
-    // const ctx = canvas.getContext("2d");
-    // const chart = new Chart(ctx, {
-    //   type: "bar",
-    //   data: {
-    //     labels: workoutData.map((entry) => entry.date),
-    //     datasets: [
-    //       {
-    //         label: "Workouts",
-    //         data: workoutData.map((entry) => entry.value),
-    //         backgroundColor: "rgba(54, 162, 235, 0.2)",
-    //         borderColor: "rgba(54, 162, 235, 1)",
-    //         borderWidth: 1,
-    //       },
-    //     ],
-    //   },
-    //   options: {
-    //     scales: {
-    //       yAxes: [
-    //         {
-    //           ticks: {
-    //             beginAtZero: true,
-    //           },
-    //         },
-    //       ],
-    //     },
-    //   },
-    // });
+      const workouts = await collection
+        .find({ username })
+        .sort({ date: 1 })
+        .toArray();
+      if (workouts.length > 0) {
+        streak++;
+        const today = moment().startOf("day");
+        let lastWorkoutDate = moment(
+          workouts[0].date,
+          "M/D/YYYY, h:mm:ss A"
+        ).startOf("day");
+        for (let i = 1; i < workouts.length; i++) {
+          const workoutDate = moment(
+            workouts[i].date,
+            "M/D/YYYY, h:mm:ss A"
+          ).startOf("day");
+          const diffDays = workoutDate.diff(lastWorkoutDate, "days");
+          if (diffDays === 1) {
+            streak++;
+            console.log(streak);
+          } else {
+            break;
+          }
+          lastWorkoutDate = workoutDate;
+        }
+        if (streak === 0) {
+          // If there was a gap between the last workout and today, the streak is broken
+          const diffDays = today.diff(lastWorkoutDate, "days");
+          if (diffDays === 1) {
+            streak = 1;
+          }
+        }
+      }
 
-    // Send the chart as a message
-    interaction.respond(`Here's your workout data for the current month:`);
-    // interaction.respond({ files: [chart.toBase64Image()] });
+      // set fire
+      let fire = `🔥`;
+      let fireStreak = "";
+
+      for (let i = 0; i < streak; i++) {
+        fireStreak += fire;
+      }
+
+      const embedBuilder = new EmbedBuilder()
+        .setTitle("Workout Streak")
+        .setColor("#0099ff")
+        .setDescription(
+          `Your current workout streak is ${streak} day${
+            streak === 1 ? "" : "s"
+          }. ${fireStreak}`
+        );
+      await interaction.reply({ embeds: [embedBuilder] });
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: "An error occurred while executing the command.",
+        ephemeral: true,
+      });
+    }
   },
 };
