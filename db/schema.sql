@@ -9,14 +9,13 @@ CREATE TABLE IF NOT EXISTS workout_data (
     workout_type TEXT NOT NULL,
     date TIMESTAMP WITH TIME ZONE NOT NULL,
     metadata JSONB DEFAULT '{}'::JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    -- Index for faster lookups by user
-    INDEX idx_workout_data_user_id (user_id),
-    -- Index for faster lookups by date
-    INDEX idx_workout_data_date (date),
-    -- Index for JSON queries on metadata
-    INDEX idx_workout_data_metadata USING GIN (metadata)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for workout_data table
+CREATE INDEX IF NOT EXISTS idx_workout_data_user_id ON workout_data(user_id);
+CREATE INDEX IF NOT EXISTS idx_workout_data_date ON workout_data(date);
+CREATE INDEX IF NOT EXISTS idx_workout_data_metadata ON workout_data USING GIN (metadata);
 
 -- Create game_stats table (replaces gameStats collection)
 CREATE TABLE IF NOT EXISTS game_stats (
@@ -29,14 +28,13 @@ CREATE TABLE IF NOT EXISTS game_stats (
     last_completed TIMESTAMP WITH TIME ZONE,
     metadata JSONB DEFAULT '{}'::JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    -- Index for faster lookups by user
-    INDEX idx_game_stats_user_id (user_id),
-    -- Index for leaderboard queries
-    INDEX idx_game_stats_points (points DESC),
-    -- Index for JSON queries on metadata
-    INDEX idx_game_stats_metadata USING GIN (metadata)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for game_stats table
+CREATE INDEX IF NOT EXISTS idx_game_stats_user_id ON game_stats(user_id);
+CREATE INDEX IF NOT EXISTS idx_game_stats_points ON game_stats(points DESC);
+CREATE INDEX IF NOT EXISTS idx_game_stats_metadata ON game_stats USING GIN (metadata);
 
 -- Create a function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
